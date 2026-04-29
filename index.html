@@ -20,6 +20,7 @@
         <nav class="nav-list" aria-label="Dashboard sections">
           <button class="nav-item active" data-target="overview">Overview</button>
           <button class="nav-item" data-target="roster">Roster</button>
+          <button class="nav-item" data-target="availability">Availability</button>
           <button class="nav-item" data-target="schedule">Schedule</button>
           <button class="nav-item" data-target="records">Match Records</button>
           <button class="nav-item" data-target="standings">League Standings</button>
@@ -198,6 +199,36 @@
           </div>
         </section>
 
+        <section class="section" id="availability">
+          <section class="panel table-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Availability</p>
+                <h3>Weekly player availability</h3>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="availability-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                    <th>Sun</th>
+                    <th>Preferred Time</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="availabilityTable"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
         <section class="section" id="schedule">
           <div class="split-layout">
             <form class="panel form-panel" id="scheduleForm">
@@ -356,6 +387,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
   </body>
 </html>

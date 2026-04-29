@@ -5,6 +5,7 @@ const defaultState = {
   schedule: [],
   records: [],
   leagues: [],
+  availability: {},
   standings: [],
 };
 
@@ -55,6 +56,8 @@ function normalizeImportedState(imported) {
     schedule: Array.isArray(data.schedule) ? data.schedule : [],
     records: Array.isArray(data.records) ? data.records : [],
     leagues: migrateLeagues(data),
+    availability:
+      data.availability && typeof data.availability === "object" ? data.availability : {},
     standings: Array.isArray(data.standings) ? data.standings : [],
   };
 }
@@ -220,6 +223,10 @@ function optionList(options, current) {
     .join("");
 }
 
+function escapeAttribute(value) {
+  return String(value || "").replaceAll("&", "&amp;").replaceAll('"', "&quot;");
+}
+
 function emptyRow(colspan, message) {
   return `<tr><td class="empty-row" colspan="${colspan}">${message}</td></tr>`;
 }
@@ -335,6 +342,73 @@ function renderRoster() {
 
   document.querySelector("#rosterTable").innerHTML =
     rows || emptyRow(7, "No players added yet.");
+}
+
+function defaultAvailability() {
+  return {
+    monday: "Available",
+    tuesday: "Available",
+    wednesday: "Available",
+    thursday: "Available",
+    friday: "Available",
+    saturday: "Available",
+    sunday: "Available",
+    preferredTime: "",
+    notes: "",
+  };
+}
+
+function availabilityFor(playerId) {
+  if (!state.availability[playerId]) {
+    state.availability[playerId] = defaultAvailability();
+  }
+
+  return state.availability[playerId];
+}
+
+function renderAvailability() {
+  const days = [
+    ["monday", "Mon"],
+    ["tuesday", "Tue"],
+    ["wednesday", "Wed"],
+    ["thursday", "Thu"],
+    ["friday", "Fri"],
+    ["saturday", "Sat"],
+    ["sunday", "Sun"],
+  ];
+  const options = ["Available", "Tentative", "Unavailable"];
+  const rows = state.roster
+    .map((player) => {
+      const availability = availabilityFor(player.id);
+      const dayCells = days
+        .map(
+          ([day]) => `
+            <td>
+              <select class="inline-select availability-select" data-availability-field="${day}" data-id="${player.id}">
+                ${optionList(options, availability[day] || "Available")}
+              </select>
+            </td>
+          `,
+        )
+        .join("");
+
+      return `
+        <tr>
+          <td><strong>${player.name}</strong><br><span>${player.role || ""}</span></td>
+          ${dayCells}
+          <td>
+            <input class="availability-input" data-availability-field="preferredTime" data-id="${player.id}" value="${escapeAttribute(availability.preferredTime)}" placeholder="8 PM ET" />
+          </td>
+          <td>
+            <input class="availability-notes" data-availability-field="notes" data-id="${player.id}" value="${escapeAttribute(availability.notes)}" placeholder="Work, school, weekends only" />
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  document.querySelector("#availabilityTable").innerHTML =
+    rows || emptyRow(10, "Add roster players first, then set availability here.");
 }
 
 function setRosterEditing(player) {
@@ -487,6 +561,7 @@ function render() {
   renderMetrics();
   renderLeagueRecords();
   renderRoster();
+  renderAvailability();
   renderSchedule();
   renderRecords();
   renderStandings();
@@ -590,9 +665,30 @@ function addDeleteHandler() {
       if (league) applyRecordToLeague(league, record, -1);
     }
     state[collection] = state[collection].filter((item) => item.id !== id);
-    if (collection === "roster" && editingRosterId === id) clearRosterEditing();
+    if (collection === "roster") {
+      delete state.availability[id];
+      if (editingRosterId === id) clearRosterEditing();
+    }
     saveState();
     render();
+  });
+}
+
+function addAvailabilityHandlers() {
+  document.body.addEventListener("change", (event) => {
+    const field = event.target.dataset.availabilityField;
+    if (!field) return;
+
+    availabilityFor(event.target.dataset.id)[field] = event.target.value;
+    saveState();
+  });
+
+  document.body.addEventListener("input", (event) => {
+    const field = event.target.dataset.availabilityField;
+    if (!field) return;
+
+    availabilityFor(event.target.dataset.id)[field] = event.target.value;
+    saveState();
   });
 }
 
@@ -660,6 +756,7 @@ function seedDemo() {
       { id: uid(), date: "2026-04-24", league: "Spring League", opponent: "Orange Line", ourGames: 2, theirGames: 3, ourGoals: 10, theirGoals: 11, mvp: "Player 1" },
     ],
     leagues: [],
+    availability: {},
     standings: [
       { id: uid(), team: "Your Team", wins: 1, losses: 1, ties: 0, gamesWon: 5, gamesLost: 4 },
       { id: uid(), team: "Velocity", wins: 2, losses: 0, ties: 0, gamesWon: 6, gamesLost: 2 },
@@ -692,4 +789,5 @@ addSubmitHandlers();
 addDeleteHandler();
 addRosterRowHandlers();
 addLeagueRecordHandlers();
+addAvailabilityHandlers();
 render();

@@ -302,6 +302,22 @@ select {
   min-width: 900px;
 }
 
+.availability-table {
+  min-width: 1120px;
+}
+
+.availability-select {
+  min-width: 130px;
+}
+
+.availability-input {
+  min-width: 150px;
+}
+
+.availability-notes {
+  min-width: 220px;
+}
+
 .counter-control {
   display: inline-flex;
   align-items: center;
