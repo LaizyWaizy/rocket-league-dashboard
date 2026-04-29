@@ -1,4 +1,24 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import {
+  doc,
+  getDoc,
+  getFirestore,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
 const storageKey = "rocketLeagueManagerDashboard";
+const firebaseConfig = {
+  apiKey: "AIzaSyCynEDR9msFDTKRI393qJsA9zqPNUxkXdE",
+  authDomain: "rocket-league-team.firebaseapp.com",
+  projectId: "rocket-league-team",
+  storageBucket: "rocket-league-team.firebasestorage.app",
+  messagingSenderId: "131536124093",
+  appId: "1:131536124093:web:012b47e685951bae3fdfd4",
+  measurementId: "G-VB3BRFC5GH",
+};
+const cloudDocPath = ["dashboards", "rocket-league-team"];
 
 const defaultState = {
   roster: [],
@@ -11,6 +31,10 @@ const defaultState = {
 
 let state = loadState();
 let editingRosterId = null;
+let cloudSaveTimer = null;
+let cloudReady = false;
+let applyingRemoteState = false;
+let dashboardDoc = null;
 
 function loadState() {
   const saved = localStorage.getItem(storageKey);
@@ -25,6 +49,65 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(storageKey, JSON.stringify(state));
+  queueCloudSave();
+}
+
+function queueCloudSave() {
+  if (!cloudReady || applyingRemoteState) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(saveStateToCloud, 500);
+}
+
+async function saveStateToCloud() {
+  if (!dashboardDoc) return;
+
+  try {
+    await setDoc(
+      dashboardDoc,
+      {
+        ...state,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  } catch (error) {
+    console.warn("Cloud save failed; local copy is still saved.", error);
+  }
+}
+
+async function initializeCloudSync() {
+  try {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    dashboardDoc = doc(db, ...cloudDocPath);
+
+    const snapshot = await getDoc(dashboardDoc);
+    if (snapshot.exists()) {
+      applyingRemoteState = true;
+      state = normalizeImportedState(snapshot.data());
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      render();
+      applyingRemoteState = false;
+    } else {
+      await setDoc(dashboardDoc, {
+        ...state,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    cloudReady = true;
+    onSnapshot(dashboardDoc, (remoteSnapshot) => {
+      if (!remoteSnapshot.exists()) return;
+      applyingRemoteState = true;
+      state = normalizeImportedState(remoteSnapshot.data());
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      render();
+      applyingRemoteState = false;
+    });
+  } catch (error) {
+    console.warn("Cloud sync unavailable; using local browser storage.", error);
+  }
 }
 
 function saveBackupFile() {
@@ -797,3 +880,4 @@ addRosterRowHandlers();
 addLeagueRecordHandlers();
 addAvailabilityHandlers();
 render();
+initializeCloudSync();
