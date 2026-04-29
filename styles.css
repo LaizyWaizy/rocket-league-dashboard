@@ -279,6 +279,56 @@ select {
   gap: 18px;
 }
 
+.league-records-panel {
+  margin-bottom: 18px;
+}
+
+.league-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.league-form input {
+  width: 190px;
+}
+
+.league-form .primary-btn {
+  min-width: 64px;
+  padding: 0 14px;
+}
+
+.league-records-table {
+  min-width: 900px;
+}
+
+.counter-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.counter-control strong {
+  min-width: 24px;
+  text-align: center;
+}
+
+.counter-buttons {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.counter-btn {
+  border: 0;
+  border-radius: 8px;
+  background: #eef4f8;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 900;
+  min-width: 28px;
+  min-height: 28px;
+}
+
 .panel {
   min-width: 0;
   padding: 18px;

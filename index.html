@@ -70,6 +70,36 @@
             </article>
           </div>
 
+          <section class="panel league-records-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Leagues</p>
+                <h3>League records</h3>
+              </div>
+              <form class="league-form" id="leagueForm">
+                <input name="name" required placeholder="Add league" />
+                <button class="primary-btn" type="submit">Add</button>
+              </form>
+            </div>
+            <div class="table-wrap">
+              <table class="league-records-table">
+                <thead>
+                  <tr>
+                    <th>League</th>
+                    <th>Series W</th>
+                    <th>Series L</th>
+                    <th>Series T</th>
+                    <th>Games W</th>
+                    <th>Games L</th>
+                    <th>Record</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="leagueRecordsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
           <div class="content-grid">
             <section class="panel wide">
               <div class="panel-header">
@@ -326,6 +356,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
   </body>
 </html>

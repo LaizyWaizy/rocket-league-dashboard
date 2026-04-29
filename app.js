@@ -4,6 +4,7 @@ const defaultState = {
   roster: [],
   schedule: [],
   records: [],
+  leagues: [],
   standings: [],
 };
 
@@ -15,7 +16,7 @@ function loadState() {
   if (!saved) return structuredClone(defaultState);
 
   try {
-    return { ...structuredClone(defaultState), ...JSON.parse(saved) };
+    return normalizeImportedState(JSON.parse(saved));
   } catch {
     return structuredClone(defaultState);
   }
@@ -53,8 +54,47 @@ function normalizeImportedState(imported) {
     roster: Array.isArray(data.roster) ? data.roster : [],
     schedule: Array.isArray(data.schedule) ? data.schedule : [],
     records: Array.isArray(data.records) ? data.records : [],
+    leagues: migrateLeagues(data),
     standings: Array.isArray(data.standings) ? data.standings : [],
   };
+}
+
+function emptyLeague(name) {
+  return {
+    id: uid(),
+    name,
+    seriesWins: 0,
+    seriesLosses: 0,
+    seriesTies: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+  };
+}
+
+function migrateLeagues(data) {
+  if (Array.isArray(data.leagues)) {
+    return data.leagues.map((league) => ({
+      ...emptyLeague(league.name || "League"),
+      ...league,
+      seriesWins: toNumber(league.seriesWins),
+      seriesLosses: toNumber(league.seriesLosses),
+      seriesTies: toNumber(league.seriesTies),
+      gamesWon: toNumber(league.gamesWon),
+      gamesLost: toNumber(league.gamesLost),
+      goalsFor: toNumber(league.goalsFor),
+      goalsAgainst: toNumber(league.goalsAgainst),
+    }));
+  }
+
+  if (!Array.isArray(data.records) || data.records.length === 0) return [];
+
+  return data.records.reduce((leagues, record) => {
+    const league = ensureLeague(record.league || "Unassigned", leagues);
+    applyRecordToLeague(league, record, 1);
+    return leagues;
+  }, []);
 }
 
 function importBackupFile(file) {
@@ -113,6 +153,62 @@ function resultFor(record) {
   return "Tie";
 }
 
+function ensureLeague(name, leagues = state.leagues) {
+  const cleanName = (name || "Unassigned").trim() || "Unassigned";
+  let league = leagues.find((item) => item.name.toLowerCase() === cleanName.toLowerCase());
+
+  if (!league) {
+    league = emptyLeague(cleanName);
+    leagues.push(league);
+  }
+
+  return league;
+}
+
+function findLeague(name) {
+  const cleanName = (name || "Unassigned").trim() || "Unassigned";
+  return state.leagues.find((item) => item.name.toLowerCase() === cleanName.toLowerCase());
+}
+
+function adjustLeagueValue(league, field, amount) {
+  league[field] = Math.max(0, league[field] + amount);
+}
+
+function applyRecordToLeague(league, record, direction) {
+  const result = resultFor(record);
+
+  if (result === "Win") adjustLeagueValue(league, "seriesWins", direction);
+  if (result === "Loss") adjustLeagueValue(league, "seriesLosses", direction);
+  if (result === "Tie") adjustLeagueValue(league, "seriesTies", direction);
+  adjustLeagueValue(league, "gamesWon", record.ourGames * direction);
+  adjustLeagueValue(league, "gamesLost", record.theirGames * direction);
+  adjustLeagueValue(league, "goalsFor", record.ourGoals * direction);
+  adjustLeagueValue(league, "goalsAgainst", record.theirGoals * direction);
+}
+
+function leagueTotals() {
+  return state.leagues.reduce(
+    (totals, league) => ({
+      seriesWins: totals.seriesWins + league.seriesWins,
+      seriesLosses: totals.seriesLosses + league.seriesLosses,
+      seriesTies: totals.seriesTies + league.seriesTies,
+      gamesWon: totals.gamesWon + league.gamesWon,
+      gamesLost: totals.gamesLost + league.gamesLost,
+      goalsFor: totals.goalsFor + league.goalsFor,
+      goalsAgainst: totals.goalsAgainst + league.goalsAgainst,
+    }),
+    {
+      seriesWins: 0,
+      seriesLosses: 0,
+      seriesTies: 0,
+      gamesWon: 0,
+      gamesLost: 0,
+      goalsFor: 0,
+      goalsAgainst: 0,
+    },
+  );
+}
+
 function pill(text) {
   const className = String(text).toLowerCase().replace(/\s+/g, "-");
   return `<span class="pill ${className}">${text}</span>`;
@@ -137,17 +233,18 @@ function sortedSchedule() {
 }
 
 function renderMetrics() {
-  const wins = state.records.filter((record) => resultFor(record) === "Win").length;
-  const losses = state.records.filter((record) => resultFor(record) === "Loss").length;
-  const ties = state.records.filter((record) => resultFor(record) === "Tie").length;
+  const totals = leagueTotals();
+  const wins = totals.seriesWins;
+  const losses = totals.seriesLosses;
+  const ties = totals.seriesTies;
   const seriesTotal = wins + losses + ties;
 
-  const ourGames = state.records.reduce((total, record) => total + record.ourGames, 0);
-  const theirGames = state.records.reduce((total, record) => total + record.theirGames, 0);
+  const ourGames = totals.gamesWon;
+  const theirGames = totals.gamesLost;
   const gameTotal = ourGames + theirGames;
 
-  const ourGoals = state.records.reduce((total, record) => total + record.ourGoals, 0);
-  const theirGoals = state.records.reduce((total, record) => total + record.theirGoals, 0);
+  const ourGoals = totals.goalsFor;
+  const theirGoals = totals.goalsAgainst;
 
   document.querySelector("#seriesRecord").textContent =
     ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
@@ -163,6 +260,45 @@ function renderMetrics() {
   const active = state.roster.filter((player) => player.status === "Active").length;
   document.querySelector("#activePlayers").textContent = active;
   document.querySelector("#rosterCount").textContent = `${state.roster.length} total rostered`;
+}
+
+function counterCell(league, field) {
+  return `
+    <div class="counter-control">
+      <strong>${league[field]}</strong>
+      <span class="counter-buttons">
+        <button class="counter-btn" data-league-adjust="${field}" data-id="${league.id}" data-amount="-1" type="button">-</button>
+        <button class="counter-btn" data-league-adjust="${field}" data-id="${league.id}" data-amount="1" type="button">+</button>
+      </span>
+    </div>
+  `;
+}
+
+function renderLeagueRecords() {
+  const rows = state.leagues
+    .map((league) => {
+      const series =
+        league.seriesTies > 0
+          ? `${league.seriesWins}-${league.seriesLosses}-${league.seriesTies}`
+          : `${league.seriesWins}-${league.seriesLosses}`;
+
+      return `
+        <tr>
+          <td><strong>${league.name}</strong></td>
+          <td>${counterCell(league, "seriesWins")}</td>
+          <td>${counterCell(league, "seriesLosses")}</td>
+          <td>${counterCell(league, "seriesTies")}</td>
+          <td>${counterCell(league, "gamesWon")}</td>
+          <td>${counterCell(league, "gamesLost")}</td>
+          <td><strong>${series}</strong><br><span>${league.gamesWon}-${league.gamesLost} games</span></td>
+          <td><button class="delete-btn" data-delete="leagues" data-id="${league.id}" type="button">Remove</button></td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  document.querySelector("#leagueRecordsTable").innerHTML =
+    rows || emptyRow(8, "Add a league to start tracking records separately.");
 }
 
 function renderRoster() {
@@ -349,6 +485,7 @@ function renderStandings() {
 
 function render() {
   renderMetrics();
+  renderLeagueRecords();
   renderRoster();
   renderSchedule();
   renderRecords();
@@ -385,7 +522,7 @@ function addSubmitHandlers() {
   document.querySelector("#recordForm").addEventListener("submit", (event) => {
     event.preventDefault();
     const data = formData(event.currentTarget);
-    state.records.push({
+    const record = {
       id: uid(),
       date: data.date,
       league: data.league,
@@ -395,7 +532,17 @@ function addSubmitHandlers() {
       ourGoals: toNumber(data.ourGoals),
       theirGoals: toNumber(data.theirGoals),
       mvp: data.mvp,
-    });
+    };
+    state.records.push(record);
+    applyRecordToLeague(ensureLeague(record.league), record, 1);
+    event.currentTarget.reset();
+    saveState();
+    render();
+  });
+
+  document.querySelector("#leagueForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    ensureLeague(formData(event.currentTarget).name);
     event.currentTarget.reset();
     saveState();
     render();
@@ -437,8 +584,29 @@ function addDeleteHandler() {
 
     const collection = button.dataset.delete;
     const id = button.dataset.id;
+    if (collection === "records") {
+      const record = state.records.find((item) => item.id === id);
+      const league = record ? findLeague(record.league) : null;
+      if (league) applyRecordToLeague(league, record, -1);
+    }
     state[collection] = state[collection].filter((item) => item.id !== id);
     if (collection === "roster" && editingRosterId === id) clearRosterEditing();
+    saveState();
+    render();
+  });
+}
+
+function addLeagueRecordHandlers() {
+  document.body.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-league-adjust]");
+    if (!button) return;
+
+    const league = state.leagues.find((item) => item.id === button.dataset.id);
+    if (!league) return;
+
+    const field = button.dataset.leagueAdjust;
+    const nextValue = league[field] + Number(button.dataset.amount);
+    league[field] = Math.max(0, nextValue);
     saveState();
     render();
   });
@@ -491,12 +659,16 @@ function seedDemo() {
       { id: uid(), date: "2026-04-22", league: "Spring League", opponent: "Boost Club", ourGames: 3, theirGames: 1, ourGoals: 12, theirGoals: 8, mvp: "Player 2" },
       { id: uid(), date: "2026-04-24", league: "Spring League", opponent: "Orange Line", ourGames: 2, theirGames: 3, ourGoals: 10, theirGoals: 11, mvp: "Player 1" },
     ],
+    leagues: [],
     standings: [
       { id: uid(), team: "Your Team", wins: 1, losses: 1, ties: 0, gamesWon: 5, gamesLost: 4 },
       { id: uid(), team: "Velocity", wins: 2, losses: 0, ties: 0, gamesWon: 6, gamesLost: 2 },
       { id: uid(), team: "Boost Club", wins: 0, losses: 2, ties: 0, gamesWon: 2, gamesLost: 6 },
     ],
   };
+  state.records.forEach((record) => {
+    applyRecordToLeague(ensureLeague(record.league), record, 1);
+  });
   saveState();
   render();
 }
@@ -519,4 +691,5 @@ addNavHandlers();
 addSubmitHandlers();
 addDeleteHandler();
 addRosterRowHandlers();
+addLeagueRecordHandlers();
 render();
