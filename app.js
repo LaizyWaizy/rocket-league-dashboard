@@ -8,6 +8,7 @@ const defaultState = {
 };
 
 let state = loadState();
+let editingRosterId = null;
 
 function loadState() {
   const saved = localStorage.getItem(storageKey);
@@ -161,7 +162,7 @@ function renderMetrics() {
 function renderRoster() {
   const rows = state.roster
     .map(
-      (player) => `
+      (player, index) => `
         <tr>
           <td><strong>${player.name}</strong></td>
           <td>${player.role}</td>
@@ -169,7 +170,14 @@ function renderRoster() {
           <td>${player.rank || ""}</td>
           <td>${pill(player.status)}</td>
           <td>${player.contact || ""}</td>
-          <td><button class="delete-btn" data-delete="roster" data-id="${player.id}" type="button">Remove</button></td>
+          <td>
+            <div class="row-actions">
+              <button class="row-btn" data-move-roster="up" data-id="${player.id}" type="button" title="Move up" ${index === 0 ? "disabled" : ""}>&uarr;</button>
+              <button class="row-btn" data-move-roster="down" data-id="${player.id}" type="button" title="Move down" ${index === state.roster.length - 1 ? "disabled" : ""}>&darr;</button>
+              <button class="row-btn" data-edit-roster="${player.id}" type="button">Edit</button>
+              <button class="delete-btn" data-delete="roster" data-id="${player.id}" type="button">Remove</button>
+            </div>
+          </td>
         </tr>
       `,
     )
@@ -177,6 +185,41 @@ function renderRoster() {
 
   document.querySelector("#rosterTable").innerHTML =
     rows || emptyRow(7, "No players added yet.");
+}
+
+function setRosterEditing(player) {
+  const form = document.querySelector("#rosterForm");
+
+  editingRosterId = player.id;
+  form.elements.name.value = player.name || "";
+  form.elements.role.value = player.role || "Starter";
+  form.elements.platform.value = player.platform || "";
+  form.elements.rank.value = player.rank || "";
+  form.elements.status.value = player.status || "Active";
+  form.elements.contact.value = player.contact || "";
+  document.querySelector("#rosterSubmitBtn").textContent = "Save player";
+  document.querySelector("#cancelRosterEditBtn").classList.remove("hidden");
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function clearRosterEditing() {
+  editingRosterId = null;
+  document.querySelector("#rosterForm").reset();
+  document.querySelector("#rosterSubmitBtn").textContent = "Add player";
+  document.querySelector("#cancelRosterEditBtn").classList.add("hidden");
+}
+
+function moveRosterPlayer(id, direction) {
+  const index = state.roster.findIndex((player) => player.id === id);
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+  if (index < 0 || targetIndex < 0 || targetIndex >= state.roster.length) return;
+  [state.roster[index], state.roster[targetIndex]] = [
+    state.roster[targetIndex],
+    state.roster[index],
+  ];
+  saveState();
+  render();
 }
 
 function renderSchedule() {
@@ -301,8 +344,18 @@ function render() {
 function addSubmitHandlers() {
   document.querySelector("#rosterForm").addEventListener("submit", (event) => {
     event.preventDefault();
-    state.roster.push({ id: uid(), ...formData(event.currentTarget) });
-    event.currentTarget.reset();
+    const playerData = formData(event.currentTarget);
+
+    if (editingRosterId) {
+      state.roster = state.roster.map((player) =>
+        player.id === editingRosterId ? { ...player, ...playerData } : player,
+      );
+      clearRosterEditing();
+    } else {
+      state.roster.push({ id: uid(), ...playerData });
+      event.currentTarget.reset();
+    }
+
     saveState();
     render();
   });
@@ -371,9 +424,28 @@ function addDeleteHandler() {
     const collection = button.dataset.delete;
     const id = button.dataset.id;
     state[collection] = state[collection].filter((item) => item.id !== id);
+    if (collection === "roster" && editingRosterId === id) clearRosterEditing();
     saveState();
     render();
   });
+}
+
+function addRosterRowHandlers() {
+  document.body.addEventListener("click", (event) => {
+    const editButton = event.target.closest("[data-edit-roster]");
+    const moveButton = event.target.closest("[data-move-roster]");
+
+    if (editButton) {
+      const player = state.roster.find((item) => item.id === editButton.dataset.editRoster);
+      if (player) setRosterEditing(player);
+    }
+
+    if (moveButton) {
+      moveRosterPlayer(moveButton.dataset.id, moveButton.dataset.moveRoster);
+    }
+  });
+
+  document.querySelector("#cancelRosterEditBtn").addEventListener("click", clearRosterEditing);
 }
 
 function seedDemo() {
@@ -420,4 +492,5 @@ document.querySelector("#resetBtn").addEventListener("click", () => {
 addNavHandlers();
 addSubmitHandlers();
 addDeleteHandler();
+addRosterRowHandlers();
 render();

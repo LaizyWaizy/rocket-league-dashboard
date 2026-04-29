@@ -135,7 +135,10 @@
                 </select>
               </label>
               <label>Contact<input name="contact" placeholder="Discord or email" /></label>
-              <button class="primary-btn" type="submit">Add player</button>
+              <div class="form-actions">
+                <button class="primary-btn" id="rosterSubmitBtn" type="submit">Add player</button>
+                <button class="secondary-btn hidden" id="cancelRosterEditBtn" type="button">Cancel</button>
+              </div>
             </form>
 
             <section class="panel table-panel">

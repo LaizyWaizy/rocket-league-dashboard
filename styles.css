@@ -200,6 +200,29 @@ select {
   padding: 7px 10px;
 }
 
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.row-btn {
+  border: 0;
+  border-radius: 8px;
+  background: #eef4f8;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 800;
+  min-width: 34px;
+  padding: 7px 9px;
+}
+
+.row-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .section {
   display: none;
 }
@@ -273,6 +296,16 @@ select {
 .form-panel {
   display: grid;
   gap: 12px;
+}
+
+.form-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.hidden {
+  display: none;
 }
 
 label {
