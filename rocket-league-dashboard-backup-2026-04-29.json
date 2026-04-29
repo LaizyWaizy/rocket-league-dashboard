@@ -1,0 +1,65 @@
+{
+  "app": "Rocket League Team Manager",
+  "exportedAt": "2026-04-29T04:03:59.503Z",
+  "data": {
+    "roster": [
+      {
+        "id": "1777435183164-a5dd965d1bac28",
+        "name": "Jay",
+        "role": "Starter",
+        "platform": "Pc",
+        "rank": "C3-GC",
+        "status": "Active",
+        "contact": ""
+      },
+      {
+        "id": "1777435196043-744654bcf76508",
+        "name": "LaizyWaizy",
+        "role": "Manager",
+        "platform": "Pc",
+        "rank": "C3",
+        "status": "Active",
+        "contact": ""
+      },
+      {
+        "id": "1777435220875-4de878feff98a",
+        "name": "Lunar",
+        "role": "Starter",
+        "platform": "PC",
+        "rank": "C3-Gc",
+        "status": "Active",
+        "contact": ""
+      },
+      {
+        "id": "1777435238963-407fb6ba3acb5",
+        "name": "Rah",
+        "role": "Starter",
+        "platform": "Ps4",
+        "rank": "C3",
+        "status": "Active",
+        "contact": ""
+      },
+      {
+        "id": "1777435274268-6ff955033b9ff",
+        "name": "Skeleton",
+        "role": "Starter",
+        "platform": "Pc",
+        "rank": "C2",
+        "status": "Active",
+        "contact": ""
+      },
+      {
+        "id": "1777435286859-12c2a7f98a7bd8",
+        "name": "Killua",
+        "role": "Sub",
+        "platform": "Xbox",
+        "rank": "Gc1",
+        "status": "Active",
+        "contact": ""
+      }
+    ],
+    "schedule": [],
+    "records": [],
+    "standings": []
+  }
+}

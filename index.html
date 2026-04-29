@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rocket League Team Manager</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">RL</div>
+          <div>
+            <p class="eyebrow">Manager Hub</p>
+            <h1>Rocket League</h1>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Dashboard sections">
+          <button class="nav-item active" data-target="overview">Overview</button>
+          <button class="nav-item" data-target="roster">Roster</button>
+          <button class="nav-item" data-target="schedule">Schedule</button>
+          <button class="nav-item" data-target="records">Match Records</button>
+          <button class="nav-item" data-target="standings">League Standings</button>
+        </nav>
+
+        <div class="manager-note">
+          <span>Next match</span>
+          <strong id="nextMatchMini">No match scheduled</strong>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Team Operations</p>
+            <h2>Roster, schedule, and record dashboard</h2>
+          </div>
+          <div class="topbar-actions">
+            <button class="secondary-btn" id="exportBtn" type="button">Export backup</button>
+            <label class="secondary-btn file-btn" for="importFile">Import backup</label>
+            <input id="importFile" type="file" accept="application/json,.json" />
+            <button class="secondary-btn" id="seedDemoBtn" type="button">Load demo</button>
+            <button class="danger-btn" id="resetBtn" type="button">Reset data</button>
+          </div>
+        </header>
+
+        <section class="section active" id="overview">
+          <div class="metric-grid">
+            <article class="metric-panel">
+              <span>Overall Series</span>
+              <strong id="seriesRecord">0-0</strong>
+              <small id="seriesWinRate">0% series win rate</small>
+            </article>
+            <article class="metric-panel">
+              <span>Games</span>
+              <strong id="gameRecord">0-0</strong>
+              <small id="gameWinRate">0% game win rate</small>
+            </article>
+            <article class="metric-panel">
+              <span>Goal Differential</span>
+              <strong id="goalDiff">0</strong>
+              <small id="goalsTotal">0 for / 0 against</small>
+            </article>
+            <article class="metric-panel">
+              <span>Active Players</span>
+              <strong id="activePlayers">0</strong>
+              <small id="rosterCount">0 total rostered</small>
+            </article>
+          </div>
+
+          <div class="content-grid">
+            <section class="panel wide">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Schedule</p>
+                  <h3>Upcoming events</h3>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Opponent / Event</th>
+                      <th>Lineup</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="upcomingTable"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Form</p>
+                  <h3>Recent results</h3>
+                </div>
+              </div>
+              <div class="result-stack" id="recentResults"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="section" id="roster">
+          <div class="split-layout">
+            <form class="panel form-panel" id="rosterForm">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Players</p>
+                  <h3>Add roster member</h3>
+                </div>
+              </div>
+              <label>Player name<input name="name" required placeholder="Player 1" /></label>
+              <label>Role
+                <select name="role">
+                  <option>Starter</option>
+                  <option>Sub</option>
+                  <option>Coach</option>
+                  <option>Manager</option>
+                </select>
+              </label>
+              <label>Platform<input name="platform" placeholder="PC, Xbox, PlayStation" /></label>
+              <label>Rank / MMR<input name="rank" placeholder="GC1, 1550 MMR" /></label>
+              <label>Status
+                <select name="status">
+                  <option>Active</option>
+                  <option>Trial</option>
+                  <option>Benched</option>
+                  <option>Inactive</option>
+                </select>
+              </label>
+              <label>Contact<input name="contact" placeholder="Discord or email" /></label>
+              <button class="primary-btn" type="submit">Add player</button>
+            </form>
+
+            <section class="panel table-panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Roster</p>
+                  <h3>Team list</h3>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Player</th>
+                      <th>Role</th>
+                      <th>Platform</th>
+                      <th>Rank</th>
+                      <th>Status</th>
+                      <th>Contact</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="rosterTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="section" id="schedule">
+          <div class="split-layout">
+            <form class="panel form-panel" id="scheduleForm">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Calendar</p>
+                  <h3>Add event</h3>
+                </div>
+              </div>
+              <label>Date<input name="date" type="date" required /></label>
+              <label>Start time<input name="time" type="time" /></label>
+              <label>Type
+                <select name="type">
+                  <option>League Match</option>
+                  <option>Scrim</option>
+                  <option>Practice</option>
+                  <option>Tournament</option>
+                  <option>VOD Review</option>
+                </select>
+              </label>
+              <label>Opponent / Event<input name="opponent" required placeholder="Team name or event" /></label>
+              <label>League<input name="league" placeholder="League name" /></label>
+              <label>Lineup<input name="lineup" placeholder="Player 1, Player 2, Player 3" /></label>
+              <label>Status
+                <select name="status">
+                  <option>Scheduled</option>
+                  <option>Completed</option>
+                  <option>Postponed</option>
+                  <option>Cancelled</option>
+                </select>
+              </label>
+              <button class="primary-btn" type="submit">Add event</button>
+            </form>
+
+            <section class="panel table-panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Events</p>
+                  <h3>Team schedule</h3>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Type</th>
+                      <th>Opponent / Event</th>
+                      <th>League</th>
+                      <th>Lineup</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="scheduleTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="section" id="records">
+          <div class="split-layout">
+            <form class="panel form-panel" id="recordForm">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Results</p>
+                  <h3>Add match result</h3>
+                </div>
+              </div>
+              <label>Date<input name="date" type="date" required /></label>
+              <label>League<input name="league" placeholder="League name" /></label>
+              <label>Opponent<input name="opponent" required placeholder="Team name" /></label>
+              <label>Our games won<input name="ourGames" type="number" min="0" max="7" required /></label>
+              <label>Opponent games won<input name="theirGames" type="number" min="0" max="7" required /></label>
+              <label>Our goals<input name="ourGoals" type="number" min="0" value="0" /></label>
+              <label>Opponent goals<input name="theirGoals" type="number" min="0" value="0" /></label>
+              <label>MVP<input name="mvp" placeholder="Optional" /></label>
+              <button class="primary-btn" type="submit">Add result</button>
+            </form>
+
+            <section class="panel table-panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Record</p>
+                  <h3>Match history</h3>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>League</th>
+                      <th>Opponent</th>
+                      <th>Series</th>
+                      <th>Result</th>
+                      <th>Goals</th>
+                      <th>MVP</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="recordsTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="section" id="standings">
+          <div class="split-layout">
+            <form class="panel form-panel" id="standingForm">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">League</p>
+                  <h3>Add standing</h3>
+                </div>
+              </div>
+              <label>Team<input name="team" required placeholder="Team name" /></label>
+              <label>Wins<input name="wins" type="number" min="0" value="0" /></label>
+              <label>Losses<input name="losses" type="number" min="0" value="0" /></label>
+              <label>Ties<input name="ties" type="number" min="0" value="0" /></label>
+              <label>Games won<input name="gamesWon" type="number" min="0" value="0" /></label>
+              <label>Games lost<input name="gamesLost" type="number" min="0" value="0" /></label>
+              <button class="primary-btn" type="submit">Add team</button>
+            </form>
+
+            <section class="panel table-panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Table</p>
+                  <h3>League standings</h3>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Team</th>
+                      <th>Played</th>
+                      <th>W</th>
+                      <th>L</th>
+                      <th>T</th>
+                      <th>Game Diff</th>
+                      <th>Points</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="standingsTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
