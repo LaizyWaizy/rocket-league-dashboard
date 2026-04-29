@@ -347,13 +347,19 @@ function renderRoster() {
 function defaultAvailability() {
   return {
     monday: "Available",
+    mondayTime: "",
     tuesday: "Available",
+    tuesdayTime: "",
     wednesday: "Available",
+    wednesdayTime: "",
     thursday: "Available",
+    thursdayTime: "",
     friday: "Available",
+    fridayTime: "",
     saturday: "Available",
+    saturdayTime: "",
     sunday: "Available",
-    preferredTime: "",
+    sundayTime: "",
     notes: "",
   };
 }
@@ -384,9 +390,12 @@ function renderAvailability() {
         .map(
           ([day]) => `
             <td>
-              <select class="inline-select availability-select" data-availability-field="${day}" data-id="${player.id}">
-                ${optionList(options, availability[day] || "Available")}
-              </select>
+              <div class="availability-day">
+                <select class="inline-select availability-select" data-availability-field="${day}" data-id="${player.id}">
+                  ${optionList(options, availability[day] || "Available")}
+                </select>
+                <input class="availability-time" data-availability-field="${day}Time" data-id="${player.id}" value="${escapeAttribute(availability[`${day}Time`])}" placeholder="7-10 PM ET" />
+              </div>
             </td>
           `,
         )
@@ -397,9 +406,6 @@ function renderAvailability() {
           <td><strong>${player.name}</strong><br><span>${player.role || ""}</span></td>
           ${dayCells}
           <td>
-            <input class="availability-input" data-availability-field="preferredTime" data-id="${player.id}" value="${escapeAttribute(availability.preferredTime)}" placeholder="8 PM ET" />
-          </td>
-          <td>
             <input class="availability-notes" data-availability-field="notes" data-id="${player.id}" value="${escapeAttribute(availability.notes)}" placeholder="Work, school, weekends only" />
           </td>
         </tr>
@@ -408,7 +414,7 @@ function renderAvailability() {
     .join("");
 
   document.querySelector("#availabilityTable").innerHTML =
-    rows || emptyRow(10, "Add roster players first, then set availability here.");
+    rows || emptyRow(9, "Add roster players first, then set availability here.");
 }
 
 function setRosterEditing(player) {

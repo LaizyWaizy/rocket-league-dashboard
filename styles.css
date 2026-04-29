@@ -303,15 +303,23 @@ select {
 }
 
 .availability-table {
-  min-width: 1120px;
+  min-width: 1320px;
 }
 
 .availability-select {
-  min-width: 130px;
+  min-width: 122px;
 }
 
-.availability-input {
-  min-width: 150px;
+.availability-day {
+  display: grid;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.availability-time {
+  min-width: 122px;
+  min-height: 34px;
+  padding: 5px 8px;
 }
 
 .availability-notes {
