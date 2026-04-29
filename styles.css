@@ -223,6 +223,12 @@ select {
   opacity: 0.45;
 }
 
+.inline-select {
+  min-height: 34px;
+  min-width: 120px;
+  padding: 5px 8px;
+}
+
 .section {
   display: none;
 }

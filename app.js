@@ -118,6 +118,12 @@ function pill(text) {
   return `<span class="pill ${className}">${text}</span>`;
 }
 
+function optionList(options, current) {
+  return options
+    .map((option) => `<option ${option === current ? "selected" : ""}>${option}</option>`)
+    .join("");
+}
+
 function emptyRow(colspan, message) {
   return `<tr><td class="empty-row" colspan="${colspan}">${message}</td></tr>`;
 }
@@ -165,10 +171,18 @@ function renderRoster() {
       (player, index) => `
         <tr>
           <td><strong>${player.name}</strong></td>
-          <td>${player.role}</td>
+          <td>
+            <select class="inline-select" data-roster-field="role" data-id="${player.id}">
+              ${optionList(["Starter", "Sub", "Coach", "Manager"], player.role)}
+            </select>
+          </td>
           <td>${player.platform || ""}</td>
           <td>${player.rank || ""}</td>
-          <td>${pill(player.status)}</td>
+          <td>
+            <select class="inline-select" data-roster-field="status" data-id="${player.id}">
+              ${optionList(["Active", "Trial", "Benched", "Inactive"], player.status)}
+            </select>
+          </td>
           <td>${player.contact || ""}</td>
           <td>
             <div class="row-actions">
@@ -443,6 +457,18 @@ function addRosterRowHandlers() {
     if (moveButton) {
       moveRosterPlayer(moveButton.dataset.id, moveButton.dataset.moveRoster);
     }
+  });
+
+  document.body.addEventListener("change", (event) => {
+    const select = event.target.closest("[data-roster-field]");
+    if (!select) return;
+
+    const player = state.roster.find((item) => item.id === select.dataset.id);
+    if (!player) return;
+
+    player[select.dataset.rosterField] = select.value;
+    saveState();
+    render();
   });
 
   document.querySelector("#cancelRosterEditBtn").addEventListener("click", clearRosterEditing);
